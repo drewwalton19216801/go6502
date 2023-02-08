@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -14,9 +13,11 @@ type CPU struct {
 	MMU        *MMU  // memory management unit
 	running    bool  // is the CPU running?
 	cycles     int   // number of cycles executed
+	debug      bool  // is the CPU in debug mode?
 }
 
 func (cpu *CPU) reset(resetVector uint16) {
+	// Reset the CPU
 	cpu.PC = resetVector
 	cpu.SP = 0x0100
 	cpu.A = 0x00
@@ -119,17 +120,45 @@ func (cpu *CPU) fetchOperand(instruction uint8) uint16 {
 	if !ok {
 		return 0x0000
 	}
-	// Print the address mode
-	fmt.Println("Addressing mode:", addressingModeNames[inst.addressingMode])
 	return mode(cpu)
 }
 
-func (cpu *CPU) disassemble(instruction uint8) string {
-	inst, ok := instructions[instruction]
-	if !ok {
-		return "$" + strconv.FormatUint(uint64(instruction), 16)
+func (cpu *CPU) disassemble(instruction uint8, operand uint16) string {
+	inst := instructions[instruction]
+	mode := addressingModeNames[inst.addressingMode]
+
+	operandString := ""
+
+	switch mode {
+	case "Implied":
+		operandString = ""
+	case "Accumulator":
+		operandString = "A"
+	case "Immediate":
+		operandString = fmt.Sprintf("#$%02X", operand)
+	case "ZeroPage":
+		operandString = fmt.Sprintf("$%02X", operand)
+	case "ZeroPageX":
+		operandString = fmt.Sprintf("$%02X,X", operand)
+	case "ZeroPageY":
+		operandString = fmt.Sprintf("$%02X,Y", operand)
+	case "Relative":
+		operandString = fmt.Sprintf("$%02X", operand)
+	case "Absolute":
+		operandString = fmt.Sprintf("$%04X", operand)
+	case "AbsoluteX":
+		operandString = fmt.Sprintf("$%04X,X", operand)
+	case "AbsoluteY":
+		operandString = fmt.Sprintf("$%04X,Y", operand)
+	case "Indirect":
+		operandString = fmt.Sprintf("($%04X)", operand)
+	case "IndirectX":
+		operandString = fmt.Sprintf("($%02X,X)", operand)
+	case "IndirectY":
+		operandString = fmt.Sprintf("($%02X),Y", operand)
+
 	}
-	return inst.mnemonic
+	return (inst.mnemonic + " " + operandString)
 }
 
 func (cpu *CPU) run() {
@@ -138,7 +167,9 @@ func (cpu *CPU) run() {
 	for {
 		instruction := cpu.fetchByte()
 		operand := cpu.fetchOperand(instruction)
-		fmt.Printf("%04X: %s %04X\n", cpu.PC, cpu.disassemble(instruction), operand)
+		if cpu.debug {
+			fmt.Println("CPU run: disassembly =", cpu.disassemble(instruction, operand))
+		}
 		inst := instructions[instruction]
 		inst.execute(cpu, operand)
 		for i := 0; i < inst.cycles; i++ {

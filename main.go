@@ -25,7 +25,7 @@ var demoProgram = []uint8{
 
 func main() {
 	mmu := &MMU{}
-	cpu := CPU{clockSpeed: mhzToHz(0.00001), MMU: mmu} // 0.00001 MHz (10 hz)
+	cpu := CPU{clockSpeed: mhzToHz(0.00001), MMU: mmu, debug: true} // 0.00001 MHz (10 hz)
 	// Reset the CPU to the demo program
 	cpu.reset(0x8000)
 	// Load the demo program
