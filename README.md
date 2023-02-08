@@ -5,6 +5,7 @@ This may not ever be complete or useful, but it's nonetheless cool.
 
 ## Features
 - [x] Decimal mode
+- [X] Controllable clock speed
 - [ ] Interrupts
 - [ ] Non-maskable interrupts
 - [ ] 100% legal instruction coverage
