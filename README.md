@@ -10,6 +10,7 @@ This may not ever be complete or useful, but it's nonetheless cool.
 - [ ] 100% legal instruction coverage
 - [X] 100% legal addressing mode coverage
 - [ ] 100% illegal instruction coverage
+- [ ] Loading ROMs from files
 
 ## Usage
 ```go run .```
