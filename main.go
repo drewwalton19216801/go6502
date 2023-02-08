@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 )
 
 var demoProgram = []uint8{
@@ -24,6 +25,7 @@ var demoProgram = []uint8{
 }
 
 func main() {
+	startTime := time.Now()
 	mmu := &MMU{}
 	cpu := CPU{clockSpeed: mhzToHz(0.00001), MMU: mmu, debug: true} // 0.00001 MHz (10 hz)
 	// Reset the CPU to the demo program
@@ -36,4 +38,6 @@ func main() {
 	fmt.Printf("A: %02X X: %02X Y: %02X P: %02X SP: %02X PC: %04X\n", cpu.A, cpu.X, cpu.Y, cpu.P, cpu.SP, cpu.PC)
 	// Print the memory at $0200
 	fmt.Printf("Memory at $0200: %02X\n", mmu.readByte(0x0200))
+	finishTime := time.Now()
+	fmt.Println("Time elapsed:", finishTime.Sub(startTime))
 }
