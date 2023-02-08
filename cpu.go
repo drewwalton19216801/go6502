@@ -187,5 +187,8 @@ func (cpu *CPU) run() {
 		if !cpu.running {
 			break
 		}
+		if cpu.getFlag(Break) {
+			break
+		}
 	}
 }

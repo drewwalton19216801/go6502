@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -28,10 +30,51 @@ var demoProgram = []uint8{
 	0x00,
 }
 
+func printUsage() {
+	fmt.Println("Usage: go6502 [options]")
+	fmt.Println("Options:")
+	fmt.Println("  -h, --help\t\tPrint this help message")
+	fmt.Println("  -d, --debug\t\tEnable debug mode")
+	fmt.Println("  -c, --clock-speed\tSet the clock speed in MHz")
+}
+
 func main() {
+	debug := false
+	speed := mhzToHz(1)
+	// Parse the command line arguments
+	if len(os.Args) > 1 {
+		for i := 1; i < len(os.Args); i++ {
+			switch os.Args[i] {
+			case "-h", "--help":
+				printUsage()
+				return
+			case "-d", "--debug":
+				debug = true
+			case "-c", "--clock-speed":
+				if i+1 < len(os.Args) {
+					i++
+					clockSpeed, err := strconv.ParseFloat(os.Args[i], 64)
+					if err != nil {
+						fmt.Println("Invalid clock speed:", os.Args[i])
+						return
+					}
+					speed = mhzToHz(clockSpeed)
+				} else {
+					fmt.Println("Missing clock speed")
+					return
+				}
+			default:
+				fmt.Println("Invalid option:", os.Args[i])
+				return
+			}
+		}
+	} else {
+		printUsage()
+		return
+	}
 	startTime := time.Now()
 	mmu := &MMU{}
-	cpu := CPU{clockSpeed: mhzToHz(0.00001), MMU: mmu, debug: true} // 0.00001 MHz (10 hz)
+	cpu := CPU{clockSpeed: speed, MMU: mmu, debug: debug} // 0.00001 MHz (10 hz)
 	// Reset the CPU to the demo program
 	cpu.reset(0x8000)
 	// Load the demo program

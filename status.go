@@ -23,3 +23,14 @@ func (cpu *CPU) setFlag(flag byte, value bool) {
 func (cpu *CPU) getFlag(flag byte) bool {
 	return cpu.P&flag != 0
 }
+
+func (cpu *CPU) getStatus() byte {
+	// Get the status
+	status := cpu.P
+	// Set the unused flag
+	status |= 0x20
+	// Set the break flag
+	status |= 0x10
+	// Return the status
+	return status
+}

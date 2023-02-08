@@ -357,8 +357,18 @@ func (cpu *CPU) asl(address uint16) {
 }
 
 func (cpu *CPU) brk() {
-
-	cpu.running = false
+	// Increment the program counter
+	cpu.PC++
+	// Push the program counter to the stack
+	cpu.pushWord(cpu.PC)
+	// Push the status register to the stack
+	cpu.pushByte(cpu.getStatus())
+	// Set the break flag
+	cpu.setFlag(Break, true)
+	// Set the Interrupt flag
+	cpu.setFlag(Interrupt, true)
+	// Set the program counter to the address stored at 0xFFFE
+	cpu.PC = cpu.MMU.readWord(0xFFFE)
 }
 
 func (cpu *CPU) clc() {

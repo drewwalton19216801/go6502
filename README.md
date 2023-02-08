@@ -13,5 +13,12 @@ This may not ever be complete or useful, but it's nonetheless cool.
 - [ ] 100% illegal instruction coverage
 - [ ] Loading ROMs from files
 
-## Usage
-```go run .```
+## Building
+`go build`
+
+## Running
+`go6502 [options]`
+
+## Options
+`--clock-speed (-c)` - Clock speed in MHz (default 1, can go down to 0.00001)
+`--debug (-d)` - Enable debug mode
