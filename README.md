@@ -14,10 +14,10 @@ This may not ever be complete or useful, but it's nonetheless cool.
 - [ ] Loading ROMs from files
 
 ## Building
-`go build`
+From the go6502 directory: `go build .`
 
 ## Running
-`go6502 [options]`
+`./go6502 [options]`
 
 ## Options
 `--clock-speed (-c)` - Clock speed in MHz (default 1, can go down to 0.00001)
