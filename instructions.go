@@ -90,19 +90,25 @@ var instructions = map[uint8]Instruction{
 	0x65: {mnemonic: "ADC", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {
 		cpu.adc(operand)
 	}},
-	0x66: {mnemonic: "ROR", addressingMode: 3, length: 2, cycles: 5, execute: func(cpu *CPU, operand uint16) {}},
+	0x66: {mnemonic: "ROR", addressingMode: 3, length: 2, cycles: 5, execute: func(cpu *CPU, operand uint16) {
+		cpu.ror(operand)
+	}},
 	0x68: {mnemonic: "PLA", addressingMode: 0, length: 1, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
 	0x69: {mnemonic: "ADC", addressingMode: 2, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {
 		cpu.adc(operand)
 	}},
-	0x6A: {mnemonic: "ROR", addressingMode: 1, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
+	0x6A: {mnemonic: "ROR", addressingMode: 1, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {
+		cpu.ror(operand)
+	}},
 	0x6C: {mnemonic: "JMP", addressingMode: 10, length: 3, cycles: 5, execute: func(cpu *CPU, operand uint16) {
 		cpu.jmp(operand)
 	}},
 	0x6D: {mnemonic: "ADC", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
 		cpu.adc(operand)
 	}},
-	0x6E: {mnemonic: "ROR", addressingMode: 7, length: 3, cycles: 6, execute: func(cpu *CPU, operand uint16) {}},
+	0x6E: {mnemonic: "ROR", addressingMode: 7, length: 3, cycles: 6, execute: func(cpu *CPU, operand uint16) {
+		cpu.ror(operand)
+	}},
 	0x70: {mnemonic: "BVS", addressingMode: 6, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
 	0x71: {mnemonic: "ADC", addressingMode: 9, length: 2, cycles: 5, execute: func(cpu *CPU, operand uint16) {
 		cpu.adc(operand)
@@ -110,7 +116,9 @@ var instructions = map[uint8]Instruction{
 	0x75: {mnemonic: "ADC", addressingMode: 4, length: 2, cycles: 4, execute: func(cpu *CPU, operand uint16) {
 		cpu.adc(operand)
 	}},
-	0x76: {mnemonic: "ROR", addressingMode: 4, length: 2, cycles: 6, execute: func(cpu *CPU, operand uint16) {}},
+	0x76: {mnemonic: "ROR", addressingMode: 4, length: 2, cycles: 6, execute: func(cpu *CPU, operand uint16) {
+		cpu.ror(operand)
+	}},
 	0x78: {mnemonic: "SEI", addressingMode: 0, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {
 		cpu.sei()
 	}},
@@ -120,7 +128,9 @@ var instructions = map[uint8]Instruction{
 	0x7D: {mnemonic: "ADC", addressingMode: 8, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
 		cpu.adc(operand)
 	}},
-	0x7E: {mnemonic: "ROR", addressingMode: 8, length: 3, cycles: 7, execute: func(cpu *CPU, operand uint16) {}},
+	0x7E: {mnemonic: "ROR", addressingMode: 8, length: 3, cycles: 7, execute: func(cpu *CPU, operand uint16) {
+		cpu.ror(operand)
+	}},
 	0x81: {mnemonic: "STA", addressingMode: 11, length: 2, cycles: 6, execute: func(cpu *CPU, operand uint16) {
 		cpu.sta(operand)
 	}},
@@ -128,14 +138,18 @@ var instructions = map[uint8]Instruction{
 	0x85: {mnemonic: "STA", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {
 		cpu.sta(operand)
 	}},
-	0x86: {mnemonic: "STX", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {}},
+	0x86: {mnemonic: "STX", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {
+		cpu.stx(operand)
+	}},
 	0x88: {mnemonic: "DEY", addressingMode: 0, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
 	0x8A: {mnemonic: "TXA", addressingMode: 0, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
 	0x8C: {mnemonic: "STY", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
 	0x8D: {mnemonic: "STA", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
 		cpu.sta(operand)
 	}},
-	0x8E: {mnemonic: "STX", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
+	0x8E: {mnemonic: "STX", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
+		cpu.stx(operand)
+	}},
 	0x90: {mnemonic: "BCC", addressingMode: 6, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
 	0x91: {mnemonic: "STA", addressingMode: 9, length: 2, cycles: 6, execute: func(cpu *CPU, operand uint16) {
 		cpu.sta(operand)
@@ -144,7 +158,9 @@ var instructions = map[uint8]Instruction{
 	0x95: {mnemonic: "STA", addressingMode: 4, length: 2, cycles: 4, execute: func(cpu *CPU, operand uint16) {
 		cpu.sta(operand)
 	}},
-	0x96: {mnemonic: "STX", addressingMode: 5, length: 2, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
+	0x96: {mnemonic: "STX", addressingMode: 5, length: 2, cycles: 4, execute: func(cpu *CPU, operand uint16) {
+		cpu.stx(operand)
+	}},
 	0x98: {mnemonic: "TYA", addressingMode: 0, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
 	0x99: {mnemonic: "STA", addressingMode: 8, length: 3, cycles: 5, execute: func(cpu *CPU, operand uint16) {
 		cpu.sta(operand)
@@ -388,6 +404,29 @@ func (cpu *CPU) lda(address uint16) {
 	}
 }
 
+func ror_wrapped(cpu *CPU, value uint8) uint8 {
+	// Rotate the value right
+	result := (value >> 1) | (value << 7)
+	// Set the carry flag to the value of the least significant bit
+	cpu.setFlag(Carry, value&0x01 == 0x01)
+	// Set the zero flag if the result is zero
+	cpu.setFlag(Zero, result == 0)
+	// Set the negative flag if the result is negative
+	cpu.setFlag(Negative, result&0x80 == 0x80)
+	// Return the result
+	return result
+}
+
+func (cpu *CPU) ror(address uint16) {
+	if address == 0 {
+		cpu.A = ror_wrapped(cpu, cpu.A)
+	} else {
+		data := cpu.MMU.readByte(address)
+		result := ror_wrapped(cpu, data)
+		cpu.MMU.writeByte(address, result)
+	}
+}
+
 func (cpu *CPU) sec() {
 	cpu.setFlag(Carry, true)
 }
@@ -402,4 +441,8 @@ func (cpu *CPU) sei() {
 
 func (cpu *CPU) sta(address uint16) {
 	cpu.MMU.writeByte(address, cpu.A)
+}
+
+func (cpu *CPU) stx(address uint16) {
+	cpu.MMU.writeByte(address, cpu.X)
 }
