@@ -173,12 +173,16 @@ var instructions = map[uint8]Instruction{
 	0xA1: {mnemonic: "LDA", addressingMode: 11, length: 2, cycles: 6, execute: func(cpu *CPU, operand uint16) {
 		cpu.lda(operand)
 	}},
-	0xA2: {mnemonic: "LDX", addressingMode: 2, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
+	0xA2: {mnemonic: "LDX", addressingMode: 2, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {
+		cpu.ldx(operand)
+	}},
 	0xA4: {mnemonic: "LDY", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {}},
 	0xA5: {mnemonic: "LDA", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {
 		cpu.lda(operand)
 	}},
-	0xA6: {mnemonic: "LDX", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {}},
+	0xA6: {mnemonic: "LDX", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {
+		cpu.ldx(operand)
+	}},
 	0xA8: {mnemonic: "TAY", addressingMode: 0, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
 	0xA9: {mnemonic: "LDA", addressingMode: 2, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {
 		cpu.lda(operand)
@@ -188,7 +192,9 @@ var instructions = map[uint8]Instruction{
 	0xAD: {mnemonic: "LDA", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
 		cpu.lda(operand)
 	}},
-	0xAE: {mnemonic: "LDX", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
+	0xAE: {mnemonic: "LDX", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
+		cpu.ldx(operand)
+	}},
 	0xB0: {mnemonic: "BCS", addressingMode: 6, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
 	0xB1: {mnemonic: "LDA", addressingMode: 9, length: 2, cycles: 5, execute: func(cpu *CPU, operand uint16) {
 		cpu.lda(operand)
@@ -197,7 +203,9 @@ var instructions = map[uint8]Instruction{
 	0xB5: {mnemonic: "LDA", addressingMode: 4, length: 2, cycles: 4, execute: func(cpu *CPU, operand uint16) {
 		cpu.lda(operand)
 	}},
-	0xB6: {mnemonic: "LDX", addressingMode: 5, length: 2, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
+	0xB6: {mnemonic: "LDX", addressingMode: 5, length: 2, cycles: 4, execute: func(cpu *CPU, operand uint16) {
+		cpu.ldx(operand)
+	}},
 	0xB8: {mnemonic: "CLV", addressingMode: 0, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {
 		cpu.clv()
 	}},
@@ -209,7 +217,9 @@ var instructions = map[uint8]Instruction{
 	0xBD: {mnemonic: "LDA", addressingMode: 8, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
 		cpu.lda(operand)
 	}},
-	0xBE: {mnemonic: "LDX", addressingMode: 8, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
+	0xBE: {mnemonic: "LDX", addressingMode: 8, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
+		cpu.ldx(operand)
+	}},
 	0xC0: {mnemonic: "CPY", addressingMode: 2, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
 	0xC1: {mnemonic: "CMP", addressingMode: 11, length: 2, cycles: 6, execute: func(cpu *CPU, operand uint16) {}},
 	0xC4: {mnemonic: "CPY", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {}},
@@ -390,6 +400,24 @@ func (cpu *CPU) lda(address uint16) {
 	data := cpu.MMU.readByte(address)
 	// Set the accumulator to the data
 	cpu.A = data
+	// Set the zero flag if the data is zero
+	if data == 0 {
+		cpu.setFlag(Zero, true)
+	} else {
+		cpu.setFlag(Zero, false)
+	}
+	// Set the negative flag if the data is negative
+	if data&0x80 == 0x80 {
+		cpu.setFlag(Negative, true)
+	} else {
+		cpu.setFlag(Negative, false)
+	}
+}
+
+func (cpu *CPU) ldx(address uint16) {
+	data := cpu.MMU.readByte(address)
+	// Set the X register to the data
+	cpu.X = data
 	// Set the zero flag if the data is zero
 	if data == 0 {
 		cpu.setFlag(Zero, true)

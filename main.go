@@ -14,10 +14,14 @@ var demoProgram = []uint8{
 	0xA9, 0x01,
 	// CLC
 	0x18,
-	// ADC #$01
-	0x69, 0x01,
+	// ADC #$03
+	0x69, 0x03,
 	// STA $0200
 	0x8D, 0x00, 0x02,
+	// LDX $0200 (load the value of $0200 into X)
+	0xAE, 0x00, 0x02,
+	// STX $0300 (store the value of X into $0300)
+	0x8E, 0x00, 0x03,
 	// CLD
 	0xD8,
 	// BRK
@@ -38,6 +42,8 @@ func main() {
 	fmt.Printf("A: %02X X: %02X Y: %02X P: %02X SP: %02X PC: %04X\n", cpu.A, cpu.X, cpu.Y, cpu.P, cpu.SP, cpu.PC)
 	// Print the memory at $0200
 	fmt.Printf("Memory at $0200: %02X\n", mmu.readByte(0x0200))
+	// Print the memory at $0300
+	fmt.Printf("Memory at $0300: %02X\n", mmu.readByte(0x0300))
 	finishTime := time.Now()
 	fmt.Println("Time elapsed:", finishTime.Sub(startTime))
 }
