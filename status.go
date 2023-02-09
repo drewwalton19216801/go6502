@@ -12,6 +12,7 @@ const (
 	Negative                   // Negative
 )
 
+// setFlag sets the flag to the given value
 func (cpu *CPU) setFlag(flag byte, value bool) {
 	if value {
 		cpu.P |= flag
@@ -20,6 +21,7 @@ func (cpu *CPU) setFlag(flag byte, value bool) {
 	}
 }
 
+// getFlag returns the value of the given flag
 func (cpu *CPU) getFlag(flag byte) bool {
 	return cpu.P&flag != 0
 }

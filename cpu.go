@@ -32,12 +32,25 @@ func (cpu *CPU) reset(resetVector uint16) {
 	cpu.running = true
 }
 
+func (cpu *CPU) writeByte(value uint8) {
+	// Write the value to the memory
+	cpu.MMU.writeByte(cpu.PC, value)
+	// Increment the program counter
+	cpu.PC++
+}
+
+func (cpu *CPU) writeWord(value uint16) {
+	// Write the low byte
+	cpu.writeByte(uint8(value))
+	// Write the high byte
+	cpu.writeByte(uint8(value >> 8))
+}
+
 func (cpu *CPU) fetchByte() uint8 {
+	// Read the byte
 	value := cpu.MMU.readByte(cpu.PC)
 	// Increment the program counter
 	cpu.PC++
-	// Increment the cycles
-	cpu.cycles++
 	// Return the value
 	return value
 }
@@ -59,6 +72,7 @@ func (cpu *CPU) fetchWord() uint16 {
 }
 
 func (cpu *CPU) spToAddress() uint16 {
+	// Convert the stack pointer to an address
 	return 0x0100 | uint16(cpu.SP)
 }
 
@@ -115,20 +129,26 @@ func (cpu *CPU) pushPCMinusOne() {
 }
 
 func (cpu *CPU) fetchOperand(instruction uint8) uint16 {
+	// Get the addressing mode
 	inst := instructions[instruction]
+	// Get the addressing mode function
 	mode, ok := addressingModes[inst.addressingMode]
 	if !ok {
 		return 0x0000
 	}
+	// Return the operand
 	return mode(cpu)
 }
 
 func (cpu *CPU) disassemble(instruction uint8, operand uint16) string {
+	// Get the instruction
 	inst := instructions[instruction]
+	// Get the addressing mode
 	mode := addressingModeNames[inst.addressingMode]
 
 	operandString := ""
 
+	// Get the operand string
 	switch mode {
 	case "Implied":
 		operandString = ""
@@ -158,35 +178,45 @@ func (cpu *CPU) disassemble(instruction uint8, operand uint16) string {
 		operandString = fmt.Sprintf("($%02X),Y", operand)
 
 	}
+	// Return the disassembly
 	return (inst.mnemonic + " " + operandString)
 }
 
 func (cpu *CPU) run() {
-	// load the demo program
+	// Set the running flag
+	cpu.running = true
+	// Set the cycle duration based on the clock speed
 	cycleDuration := time.Duration(1000000000 / cpu.clockSpeed)
 	for {
+		// Fetch the instruction
 		instruction := cpu.fetchByte()
+		// Fetch the operand
 		operand := cpu.fetchOperand(instruction)
 		if cpu.debug {
+			// Disassemble the instruction if debugging is enabled
 			fmt.Println("CPU run: disassembly =", cpu.disassemble(instruction, operand))
 		}
+		// Get the instruction from the instruction map
 		inst := instructions[instruction]
+		// Execute the instruction
 		inst.execute(cpu, operand)
 		for i := 0; i < inst.cycles; i++ {
 			start := time.Now()
 			// TODO: perform any necessary operations
 			elapsed := time.Since(start)
+			// Check if the elapsed time is less than the cycle duration
 			if elapsed < cycleDuration {
+				// Sleep for the remaining time
 				time.Sleep(cycleDuration - elapsed)
 			}
-			if !cpu.running {
-				break
-			}
-			cpu.cycles += inst.cycles
 		}
+		// Increment the cycle count by the number of cycles the instruction takes
+		cpu.cycles += inst.cycles
+		// Check if the CPU is running
 		if !cpu.running {
 			break
 		}
+		// Check if the break flag is set
 		if cpu.getFlag(Break) {
 			break
 		}

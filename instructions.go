@@ -1,13 +1,15 @@
 package main
 
+// Instruction represents an instruction
 type Instruction struct {
-	mnemonic       string
-	addressingMode int
-	length         int
-	cycles         int
-	execute        func(*CPU, uint16)
+	mnemonic       string             // The instruction mnemonic
+	addressingMode int                // The addressing mode
+	length         int                // The length of the instruction
+	cycles         int                // The number of cycles the instruction takes
+	execute        func(*CPU, uint16) // The function to execute
 }
 
+// instructions is a map of instructions
 var instructions = map[uint8]Instruction{
 	0x00: {mnemonic: "BRK", addressingMode: 0, length: 1, cycles: 7, execute: func(cpu *CPU, operand uint16) {
 		cpu.brk()
@@ -274,13 +276,6 @@ var instructions = map[uint8]Instruction{
 	}},
 }
 
-func boolToInt(b bool) uint8 {
-	if b {
-		return 1
-	}
-	return 0
-}
-
 func (cpu *CPU) adc(address uint16) {
 	// Fetch the data from the address
 	data := cpu.MMU.readByte(address)
@@ -288,6 +283,7 @@ func (cpu *CPU) adc(address uint16) {
 	result := uint16(cpu.A) + uint16(data)
 	// Add one to the result if the carry flag is set
 	if cpu.getFlag(Carry) {
+		// Add one to the result
 		result++
 	}
 
@@ -299,11 +295,13 @@ func (cpu *CPU) adc(address uint16) {
 		// Do BCD addition
 		// C# version: if (((registers.A & 0xF) + (value & 0xF) + (GetFlag(StatusFlags.Carry) ? 1 : 0)) > 9)
 		if ((cpu.A & 0xF) + (data & 0xF) + boolToInt(cpu.getFlag(Carry))) > 9 {
+			// Add 6 to the result
 			result += 6
 		}
 
 		// Set the negative flag if the result is negative
 		if result&0x80 == 0x80 {
+			// Set the negative flag
 			cpu.setFlag(Negative, true)
 		}
 		// Set the overflow flag if needed
@@ -311,6 +309,7 @@ func (cpu *CPU) adc(address uint16) {
 
 		// If the result is greater than 0x99, we need to add 96 to it
 		if result > 0x99 {
+			// Add 96 to the result
 			result += 96
 		}
 
@@ -372,18 +371,22 @@ func (cpu *CPU) brk() {
 }
 
 func (cpu *CPU) clc() {
+	// Clear the carry flag
 	cpu.setFlag(Carry, false)
 }
 
 func (cpu *CPU) cld() {
+	// Clear the decimal flag
 	cpu.setFlag(Decimal, false)
 }
 
 func (cpu *CPU) cli() {
+	// Clear the interrupt flag
 	cpu.setFlag(Interrupt, false)
 }
 
 func (cpu *CPU) clv() {
+	// Clear the overflow flag
 	cpu.setFlag(Overflow, false)
 }
 
@@ -400,13 +403,17 @@ func (cpu *CPU) inc(address uint16) {
 	cpu.MMU.writeByte(address, result)
 }
 
-func (cpu *CPU) nop() {}
+func (cpu *CPU) nop() {
+	// Do nothing
+}
 
 func (cpu *CPU) jmp(address uint16) {
+	// Set the program counter to the address
 	cpu.PC = address
 }
 
 func (cpu *CPU) lda(address uint16) {
+	// Fetch the data from the address
 	data := cpu.MMU.readByte(address)
 	// Set the accumulator to the data
 	cpu.A = data
@@ -456,31 +463,41 @@ func ror_wrapped(cpu *CPU, value uint8) uint8 {
 }
 
 func (cpu *CPU) ror(address uint16) {
+	// Check if the address is zero, which means we are rotating the accumulator
 	if address == 0 {
+		// Rotate the accumulator right
 		cpu.A = ror_wrapped(cpu, cpu.A)
 	} else {
+		// Fetch the data from the address
 		data := cpu.MMU.readByte(address)
+		// Rotate the data right
 		result := ror_wrapped(cpu, data)
+		// Write the result back to the address
 		cpu.MMU.writeByte(address, result)
 	}
 }
 
 func (cpu *CPU) sec() {
+	// Set the carry flag
 	cpu.setFlag(Carry, true)
 }
 
 func (cpu *CPU) sed() {
+	// Set the decimal flag
 	cpu.setFlag(Decimal, true)
 }
 
 func (cpu *CPU) sei() {
+	// Set the interrupt flag
 	cpu.setFlag(Interrupt, true)
 }
 
 func (cpu *CPU) sta(address uint16) {
+	// Write the accumulator to the address
 	cpu.MMU.writeByte(address, cpu.A)
 }
 
 func (cpu *CPU) stx(address uint16) {
+	// Write the X register to the address
 	cpu.MMU.writeByte(address, cpu.X)
 }
