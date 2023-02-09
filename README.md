@@ -18,7 +18,9 @@ This may not ever be complete or useful, but it's nonetheless cool.
 From the go6502 directory: `go build .`
 
 ## Running
-`./go6502 [options]`
+`./go6502 [options]` (run `./go6502 --help` to see options)
+
+Alternatively, you can run `go run . [options]`
 
 ## Options
 `--clock-speed (-c)` - Clock speed in MHz (default 1, can go down to 0.00001)
