@@ -13,7 +13,7 @@ This may not ever be complete or useful, but it's nonetheless cool.
 - [X] 100% legal addressing mode coverage
 - [ ] 100% illegal instruction coverage
 - [ ] 6502 variant support
-- [ ] Loading ROMs from files
+- [X] Loading ROMs from files
 
 ## Building
 From the go6502 directory: `go build .`
