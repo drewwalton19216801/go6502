@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -79,6 +81,11 @@ func loadProgramFromFile(fileName string) []uint8 {
 }
 
 func main() {
+	// Create a channel to receive signals
+	sigs := make(chan os.Signal, 1)
+	// Listen for SIGINT
+	signal.Notify(sigs, syscall.SIGINT)
+
 	debug := false
 	speed := mhzToHz(1)
 	loadFromFile := false
@@ -87,6 +94,7 @@ func main() {
 	benchmarkCount := 1000
 	var addressesToWatch []uint16
 	var program []uint8
+
 	// Parse the command line arguments
 	if len(os.Args) > 1 {
 		for i := 1; i < len(os.Args); i++ {
@@ -162,6 +170,19 @@ func main() {
 	}
 	mmu := &MMU{}
 	cpu := CPU{clockSpeed: speed, MMU: mmu, debug: debug} // 0.00001 MHz (10 hz)
+
+	// Handle signals
+	go func() {
+		<-sigs
+		fmt.Println()
+		cpu.running = false
+		cpu.log("Stopped emulation")
+
+		// Log the registers
+		Log("EXIT", fmt.Sprintf("A: 0x%02X, X: 0x%02X, Y: 0x%02X, P: 0x%02X, SP: 0x%02X, PC: 0x%04X", cpu.A, cpu.X, cpu.Y, cpu.P, cpu.SP, cpu.PC))
+		os.Exit(0)
+	}()
+
 	// Load the demo program, if not loading from a file
 	if !loadFromFile {
 		program = demoProgram

@@ -30,6 +30,12 @@ func (cpu *CPU) reset() {
 	cpu.running = true
 }
 
+func (cpu *CPU) log(message string) {
+	if cpu.debug {
+		Log("CPU", message)
+	}
+}
+
 func (cpu *CPU) writeByte(value uint8) {
 	// Write the value to the memory
 	cpu.MMU.writeByte(cpu.PC, value)
@@ -138,9 +144,9 @@ func (cpu *CPU) fetchOperand(instruction uint8) uint16 {
 	return mode(cpu)
 }
 
-func (cpu *CPU) disassemble(instruction uint8) string {
+func (cpu *CPU) disassemble() string {
 	// Get the instruction
-	inst := instructions[instruction]
+	inst := instructions[cpu.MMU.readByte(cpu.PC)]
 	// Get the addressing mode
 	mode := addressingModeNames[inst.addressingMode]
 
@@ -153,27 +159,27 @@ func (cpu *CPU) disassemble(instruction uint8) string {
 	case "Accumulator":
 		operandString = "A"
 	case "Immediate":
-		operandString = fmt.Sprintf("#$%02X", cpu.MMU.readByte(cpu.PC))
+		operandString = fmt.Sprintf("#$%02X", cpu.MMU.readByte(cpu.PC+1))
 	case "ZeroPage":
-		operandString = fmt.Sprintf("$%02X", cpu.MMU.readByte(cpu.PC))
+		operandString = fmt.Sprintf("$%02X", cpu.MMU.readByte(cpu.PC+1))
 	case "ZeroPageX":
-		operandString = fmt.Sprintf("$%02X,X", cpu.MMU.readByte(cpu.PC))
+		operandString = fmt.Sprintf("$%02X,X", cpu.MMU.readByte(cpu.PC+1))
 	case "ZeroPageY":
-		operandString = fmt.Sprintf("$%02X,Y", cpu.MMU.readByte(cpu.PC))
+		operandString = fmt.Sprintf("$%02X,Y", cpu.MMU.readByte(cpu.PC+1))
 	case "Relative":
-		operandString = fmt.Sprintf("$%02X", cpu.MMU.readByte(cpu.PC))
+		operandString = fmt.Sprintf("$%02X", cpu.MMU.readByte(cpu.PC+1))
 	case "Absolute":
-		operandString = fmt.Sprintf("$%04X", cpu.MMU.readWord(cpu.PC))
+		operandString = fmt.Sprintf("$%04X", cpu.MMU.readWord(cpu.PC+1))
 	case "AbsoluteX":
-		operandString = fmt.Sprintf("$%04X,X", cpu.MMU.readWord(cpu.PC))
+		operandString = fmt.Sprintf("$%04X,X", cpu.MMU.readWord(cpu.PC+1))
 	case "AbsoluteY":
-		operandString = fmt.Sprintf("$%04X,Y", cpu.MMU.readWord(cpu.PC))
+		operandString = fmt.Sprintf("$%04X,Y", cpu.MMU.readWord(cpu.PC+1))
 	case "Indirect":
-		operandString = fmt.Sprintf("($%04X)", cpu.MMU.readWord(cpu.PC))
+		operandString = fmt.Sprintf("($%04X)", cpu.MMU.readWord(cpu.PC+1))
 	case "IndirectX":
-		operandString = fmt.Sprintf("($%02X,X)", cpu.MMU.readByte(cpu.PC))
+		operandString = fmt.Sprintf("($%02X,X)", cpu.MMU.readByte(cpu.PC+1))
 	case "IndirectY":
-		operandString = fmt.Sprintf("($%02X),Y", cpu.MMU.readByte(cpu.PC))
+		operandString = fmt.Sprintf("($%02X),Y", cpu.MMU.readByte(cpu.PC+1))
 
 	}
 	// Return the disassembly
@@ -186,14 +192,14 @@ func (cpu *CPU) run(watch bool, watchAddresses []uint16) {
 	// Set the cycle duration based on the clock speed
 	cycleDuration := time.Duration(1000000000 / cpu.clockSpeed)
 	for {
+		if cpu.debug {
+			// Disassemble the next instruction if debugging is enabled
+			cpu.log(cpu.disassemble())
+			// Print the CPU registers in hex
+			cpu.log(fmt.Sprintf("A: %02X X: %02X Y: %02X P: %02X SP: %02X PC: %04X", cpu.A, cpu.X, cpu.Y, cpu.P, cpu.SP, cpu.PC))
+		}
 		// Fetch the instruction
 		instruction := cpu.fetchByte()
-		if cpu.debug {
-			// Disassemble the instruction if debugging is enabled
-			fmt.Println("CPU run: disassembly =", cpu.disassemble(instruction))
-			// Print the CPU registers in hex
-			fmt.Printf("CPU run: A = %02X, X = %02X, Y = %02X, SP = %02X, PC = %04X, P = %02X (%08b), Cycles = %d\n", cpu.A, cpu.X, cpu.Y, cpu.SP, cpu.PC, cpu.P, cpu.P, cpu.cycles)
-		}
 		// Fetch the operand
 		operand := cpu.fetchOperand(instruction)
 		// Get the instruction from the instruction map
@@ -202,9 +208,13 @@ func (cpu *CPU) run(watch bool, watchAddresses []uint16) {
 		inst.execute(cpu, operand)
 		// If the watch flag is set, print the memory addresses
 		if watch {
+			var logMessage = ""
 			for _, address := range watchAddresses {
-				fmt.Printf("CPU run: $%04X = %02X\n", address, cpu.MMU.readByte(address))
+				// Append the memory address to the log message
+				logMessage += fmt.Sprintf("$%04X %02X ", address, cpu.MMU.readByte(address))
 			}
+			// Log the message
+			Log("WATCH", logMessage)
 		}
 		for i := 0; i < inst.cycles; i++ {
 			start := time.Now()
