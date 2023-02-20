@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+var resetVector = 0xFFFC
+
 type CPU struct {
 	A, X, Y, P uint8
 	PC         uint16
@@ -16,19 +18,15 @@ type CPU struct {
 	debug      bool  // is the CPU in debug mode?
 }
 
-func (cpu *CPU) reset(resetVector uint16) {
+func (cpu *CPU) reset() {
 	// Reset the CPU
-	cpu.PC = resetVector
+	cpu.PC = cpu.MMU.readWord(uint16(resetVector))
 	cpu.SP = 0x0100
 	cpu.A = 0x00
 	cpu.X = 0x00
 	cpu.Y = 0x00
 	// Set None flags
 	cpu.setFlag(None, true)
-	// fill the memory with FFs
-	for i := 0; i < RAMSize; i++ {
-		cpu.MMU.RAM[i] = 0xFF
-	}
 	cpu.running = true
 }
 
@@ -140,7 +138,7 @@ func (cpu *CPU) fetchOperand(instruction uint8) uint16 {
 	return mode(cpu)
 }
 
-func (cpu *CPU) disassemble(instruction uint8, operand uint16) string {
+func (cpu *CPU) disassemble(instruction uint8) string {
 	// Get the instruction
 	inst := instructions[instruction]
 	// Get the addressing mode
@@ -155,34 +153,34 @@ func (cpu *CPU) disassemble(instruction uint8, operand uint16) string {
 	case "Accumulator":
 		operandString = "A"
 	case "Immediate":
-		operandString = fmt.Sprintf("#$%02X", operand)
+		operandString = fmt.Sprintf("#$%02X", cpu.MMU.readByte(cpu.PC))
 	case "ZeroPage":
-		operandString = fmt.Sprintf("$%02X", operand)
+		operandString = fmt.Sprintf("$%02X", cpu.MMU.readByte(cpu.PC))
 	case "ZeroPageX":
-		operandString = fmt.Sprintf("$%02X,X", operand)
+		operandString = fmt.Sprintf("$%02X,X", cpu.MMU.readByte(cpu.PC))
 	case "ZeroPageY":
-		operandString = fmt.Sprintf("$%02X,Y", operand)
+		operandString = fmt.Sprintf("$%02X,Y", cpu.MMU.readByte(cpu.PC))
 	case "Relative":
-		operandString = fmt.Sprintf("$%02X", operand)
+		operandString = fmt.Sprintf("$%02X", cpu.MMU.readByte(cpu.PC))
 	case "Absolute":
-		operandString = fmt.Sprintf("$%04X", operand)
+		operandString = fmt.Sprintf("$%04X", cpu.MMU.readWord(cpu.PC))
 	case "AbsoluteX":
-		operandString = fmt.Sprintf("$%04X,X", operand)
+		operandString = fmt.Sprintf("$%04X,X", cpu.MMU.readWord(cpu.PC))
 	case "AbsoluteY":
-		operandString = fmt.Sprintf("$%04X,Y", operand)
+		operandString = fmt.Sprintf("$%04X,Y", cpu.MMU.readWord(cpu.PC))
 	case "Indirect":
-		operandString = fmt.Sprintf("($%04X)", operand)
+		operandString = fmt.Sprintf("($%04X)", cpu.MMU.readWord(cpu.PC))
 	case "IndirectX":
-		operandString = fmt.Sprintf("($%02X,X)", operand)
+		operandString = fmt.Sprintf("($%02X,X)", cpu.MMU.readByte(cpu.PC))
 	case "IndirectY":
-		operandString = fmt.Sprintf("($%02X),Y", operand)
+		operandString = fmt.Sprintf("($%02X),Y", cpu.MMU.readByte(cpu.PC))
 
 	}
 	// Return the disassembly
 	return (inst.mnemonic + " " + operandString)
 }
 
-func (cpu *CPU) run() {
+func (cpu *CPU) run(watch bool, watchAddresses []uint16) {
 	// Set the running flag
 	cpu.running = true
 	// Set the cycle duration based on the clock speed
@@ -190,16 +188,24 @@ func (cpu *CPU) run() {
 	for {
 		// Fetch the instruction
 		instruction := cpu.fetchByte()
-		// Fetch the operand
-		operand := cpu.fetchOperand(instruction)
 		if cpu.debug {
 			// Disassemble the instruction if debugging is enabled
-			fmt.Println("CPU run: disassembly =", cpu.disassemble(instruction, operand))
+			fmt.Println("CPU run: disassembly =", cpu.disassemble(instruction))
+			// Print the CPU registers in hex
+			fmt.Printf("CPU run: A = %02X, X = %02X, Y = %02X, SP = %02X, PC = %04X, P = %02X (%08b), Cycles = %d\n", cpu.A, cpu.X, cpu.Y, cpu.SP, cpu.PC, cpu.P, cpu.P, cpu.cycles)
 		}
+		// Fetch the operand
+		operand := cpu.fetchOperand(instruction)
 		// Get the instruction from the instruction map
 		inst := instructions[instruction]
 		// Execute the instruction
 		inst.execute(cpu, operand)
+		// If the watch flag is set, print the memory addresses
+		if watch {
+			for _, address := range watchAddresses {
+				fmt.Printf("CPU run: $%04X = %02X\n", address, cpu.MMU.readByte(address))
+			}
+		}
 		for i := 0; i < inst.cycles; i++ {
 			start := time.Now()
 			// TODO: perform any necessary operations

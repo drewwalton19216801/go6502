@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"time"
+	"strings"
 )
 
 var demoProgram = []uint8{
@@ -37,11 +37,43 @@ func printUsage() {
 	fmt.Println("  -h, --help\t\tPrint this help message")
 	fmt.Println("  -d, --debug\t\tEnable debug mode")
 	fmt.Println("  -c, --clock-speed\tSet the clock speed in MHz")
+	fmt.Println("  --watch-addresses\tWatch the specified addresses (comma separated)")
+	fmt.Println("  -f, --file\t\tLoad a program from a file")
+	fmt.Println("Example: go6502 -c 1 -f program.bin --watch-addresses 0x6000,0x6002")
+}
+
+func loadProgramFromFile(fileName string) []uint8 {
+	// Load the program from a file as a byte array
+	file, err := os.Open(fileName)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return nil
+	}
+	defer file.Close()
+	// Get the file size
+	fileInfo, err := file.Stat()
+	if err != nil {
+		fmt.Println("Error getting file info:", err)
+		return nil
+	}
+	fileSize := fileInfo.Size()
+	// Read the file
+	program := make([]uint8, fileSize)
+	_, err = file.Read(program)
+	if err != nil {
+		fmt.Println("Error reading file:", err)
+		return nil
+	}
+	return program
 }
 
 func main() {
 	debug := false
 	speed := mhzToHz(1)
+	loadFromFile := false
+	watchAddresses := false
+	var addressesToWatch []uint16
+	var program []uint8
 	// Parse the command line arguments
 	if len(os.Args) > 1 {
 		for i := 1; i < len(os.Args); i++ {
@@ -64,6 +96,35 @@ func main() {
 					fmt.Println("Missing clock speed")
 					return
 				}
+			case "--watch-addresses":
+				if i+1 < len(os.Args) {
+					watchAddresses = true
+					i++
+					addresses := os.Args[i]
+					// Split the addresses by comma
+					addressesArray := strings.Split(addresses, ",")
+					// Convert the addresses to uint16
+					for _, address := range addressesArray {
+						addressInt, err := strconv.ParseUint(address, 0, 16)
+						if err != nil {
+							fmt.Println("Invalid address:", address)
+							return
+						}
+						addressesToWatch = append(addressesToWatch, uint16(addressInt))
+					}
+				} else {
+					fmt.Println("Missing addresses")
+					return
+				}
+			case "-f", "--file":
+				if i+1 < len(os.Args) {
+					i++
+					loadFromFile = true
+					program = loadProgramFromFile(os.Args[i])
+				} else {
+					fmt.Println("Missing file name")
+					return
+				}
 			default:
 				fmt.Println("Invalid option:", os.Args[i])
 				return
@@ -73,23 +134,20 @@ func main() {
 		printUsage()
 		return
 	}
-	startTime := time.Now()
 	mmu := &MMU{}
 	cpu := CPU{clockSpeed: speed, MMU: mmu, debug: debug} // 0.00001 MHz (10 hz)
+	// Load the demo program, if not loading from a file
+	if !loadFromFile {
+		program = demoProgram
+	}
+	mmu.loadProgram(program)
 	// Reset the CPU to the demo program
-	cpu.reset(0x8000)
-	// Load the demo program
-	mmu.loadProgram(demoProgram)
+	cpu.reset()
+	// If we did not load from a file, we need to set the program counter to 0x8000
+	if !loadFromFile {
+		cpu.PC = 0x8000
+	}
 	// Run the CPU
-	cpu.run()
+	cpu.run(watchAddresses, addressesToWatch)
 	fmt.Println("Emulation done in", cpu.cycles, "cycles", "at", hzToMHz(cpu.clockSpeed), "MHz")
-	// Print the CPU registers on one line
-	fmt.Printf("A: %02X X: %02X Y: %02X P: %02X SP: %02X PC: %04X\n", cpu.A, cpu.X, cpu.Y, cpu.P, cpu.SP, cpu.PC)
-	// Print the memory at $0200
-	fmt.Printf("Memory at $0200: %02X\n", mmu.readByte(0x0200))
-	// Print the memory at $0300
-	fmt.Printf("Memory at $0300: %02X\n", mmu.readByte(0x0300))
-	// Print the time elapsed
-	finishTime := time.Now()
-	fmt.Println("Time elapsed:", finishTime.Sub(startTime))
 }
