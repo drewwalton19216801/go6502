@@ -244,33 +244,49 @@ var instructions = map[uint8]Instruction{
 	0xDD: {mnemonic: "CMP", addressingMode: 8, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
 	0xDE: {mnemonic: "DEC", addressingMode: 8, length: 3, cycles: 7, execute: func(cpu *CPU, operand uint16) {}},
 	0xE0: {mnemonic: "CPX", addressingMode: 2, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
-	0xE1: {mnemonic: "SBC", addressingMode: 11, length: 2, cycles: 6, execute: func(cpu *CPU, operand uint16) {}},
+	0xE1: {mnemonic: "SBC", addressingMode: 11, length: 2, cycles: 6, execute: func(cpu *CPU, operand uint16) {
+		cpu.sbc(operand)
+	}},
 	0xE4: {mnemonic: "CPX", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {}},
-	0xE5: {mnemonic: "SBC", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {}},
+	0xE5: {mnemonic: "SBC", addressingMode: 3, length: 2, cycles: 3, execute: func(cpu *CPU, operand uint16) {
+		cpu.sbc(operand)
+	}},
 	0xE6: {mnemonic: "INC", addressingMode: 3, length: 2, cycles: 5, execute: func(cpu *CPU, operand uint16) {
 		cpu.inc(operand)
 	}},
 	0xE8: {mnemonic: "INX", addressingMode: 0, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
-	0xE9: {mnemonic: "SBC", addressingMode: 2, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
+	0xE9: {mnemonic: "SBC", addressingMode: 2, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {
+		cpu.sbc(operand)
+	}},
 	0xEA: {mnemonic: "NOP", addressingMode: 0, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {
 		cpu.nop()
 	}},
 	0xEC: {mnemonic: "CPX", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
-	0xED: {mnemonic: "SBC", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
+	0xED: {mnemonic: "SBC", addressingMode: 7, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
+		cpu.sbc(operand)
+	}},
 	0xEE: {mnemonic: "INC", addressingMode: 7, length: 3, cycles: 6, execute: func(cpu *CPU, operand uint16) {
 		cpu.inc(operand)
 	}},
 	0xF0: {mnemonic: "BEQ", addressingMode: 6, length: 2, cycles: 2, execute: func(cpu *CPU, operand uint16) {}},
-	0xF1: {mnemonic: "SBC", addressingMode: 9, length: 2, cycles: 5, execute: func(cpu *CPU, operand uint16) {}},
-	0xF5: {mnemonic: "SBC", addressingMode: 4, length: 2, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
+	0xF1: {mnemonic: "SBC", addressingMode: 9, length: 2, cycles: 5, execute: func(cpu *CPU, operand uint16) {
+		cpu.sbc(operand)
+	}},
+	0xF5: {mnemonic: "SBC", addressingMode: 4, length: 2, cycles: 4, execute: func(cpu *CPU, operand uint16) {
+		cpu.sbc(operand)
+	}},
 	0xF6: {mnemonic: "INC", addressingMode: 4, length: 2, cycles: 6, execute: func(cpu *CPU, operand uint16) {
 		cpu.inc(operand)
 	}},
 	0xF8: {mnemonic: "SED", addressingMode: 0, length: 1, cycles: 2, execute: func(cpu *CPU, operand uint16) {
 		cpu.sed()
 	}},
-	0xF9: {mnemonic: "SBC", addressingMode: 8, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
-	0xFD: {mnemonic: "SBC", addressingMode: 8, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {}},
+	0xF9: {mnemonic: "SBC", addressingMode: 8, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
+		cpu.sbc(operand)
+	}},
+	0xFD: {mnemonic: "SBC", addressingMode: 8, length: 3, cycles: 4, execute: func(cpu *CPU, operand uint16) {
+		cpu.sbc(operand)
+	}},
 	0xFE: {mnemonic: "INC", addressingMode: 8, length: 3, cycles: 7, execute: func(cpu *CPU, operand uint16) {
 		cpu.inc(operand)
 	}},
@@ -475,6 +491,45 @@ func (cpu *CPU) ror(address uint16) {
 		// Write the result back to the address
 		cpu.MMU.writeByte(address, result)
 	}
+}
+
+func (cpu *CPU) sbc(address uint16) {
+	// Fetch the data from the address
+	value := cpu.MMU.readByte(address)
+	var result int16
+	// Check if the decimal flag is set
+	if cpu.getFlag(Decimal) {
+		// Convert the accumulator and the value to BCD format
+		a := (cpu.A/10)*16 + (cpu.A % 10)
+		b := (value/10)*16 + (value % 10)
+		// Perform the subtraction, taking into account the carry flag
+		if cpu.getFlag(Carry) {
+			result = int16(a) - int16(b) - 1
+		} else {
+			result = int16(a) - int16(b)
+		}
+		// If the result is negative, subtract 96 (6 * 16)
+		if result < 0 {
+			result -= 96
+		}
+	} else {
+		// Perform the subtraction in binary format, taking into account the carry flag
+		if cpu.getFlag(Carry) {
+			result = int16(cpu.A) - int16(value) - 1
+		} else {
+			result = int16(cpu.A) - int16(value)
+		}
+		// Set the overflow flag if the result is out of range
+		cpu.setFlag(Overflow, (cpu.A^value)&0x80 == 0x80 && (cpu.A^uint8(result))&0x80 == 0x80)
+	}
+	// Set the carry flag if the result is positive
+	cpu.setFlag(Carry, result >= 0)
+	// Set the zero flag if the result is zero
+	cpu.setFlag(Zero, (result&0xFF) == 0)
+	// Set the negative flag if the result is negative
+	cpu.setFlag(Negative, result < 0)
+	// Store the result in the accumulator
+	cpu.A = uint8(result & 0xFF)
 }
 
 func (cpu *CPU) sec() {

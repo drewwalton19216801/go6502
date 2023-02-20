@@ -18,6 +18,8 @@ var demoProgram = []uint8{
 	0x18, // 2 cycles
 	// ADC #$03
 	0x69, 0x03, // 2 cycles
+	// SBC #$02
+	0xE9, 0x02, // 2 cycles
 	// STA $0200
 	0x8D, 0x00, 0x02, // 4 cycles
 	// LDX $0200 (load the value of $0200 into X)
